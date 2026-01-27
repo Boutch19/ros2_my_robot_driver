@@ -1,0 +1,25 @@
+# --- ROS2 / Colcon ---
+build/
+install/
+log/
+
+# --- Python ---
+*.pyc
+__pycache__/
+
+# --- Environnements virtuels ---
+.venv/
+venv/
+ENV/
+
+# --- Éditeurs ---
+.vscode/
+.idea/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Temp ---
+*.swp
+*.swo
