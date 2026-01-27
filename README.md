@@ -1,209 +1,46 @@
-# 🚀 ROS2 Workspace — Feetech STS Driver (my_robot_driver)
+Ce document détaille les étapes de transformation du kit SO-AMR100 en plateforme de développement robotique professionnelle sous ROS 2.
 
-Workspace ROS2 complet (`ros2_ws_2`) contenant un driver autonome pour les servos **Feetech STS**, basé sur le SDK Python vendorisé (`scservo_sdk`).  
-Projet minimaliste, propre, sans dépendances externes (pas de LeRobot).
+**Architecture de Développement :**
+*   **Poste de Contrôle (Host) :** PC Windows 10/11.
+*   **Cerveau Robot (Target) :** Raspberry Pi 5 (Ubuntu Server / Headless).
+*   **Méthode :** Développement à distance via VS Code (Remote-SSH).
 
----
 
-# 📦 Contenu du workspace
+## ⚙️ Phase 2 : Le Driver Moteur (Reverse Engineering)
+*Objectif : Abstraire le matériel. ROS 2 doit envoyer des angles sans savoir que ce sont des moteurs Feetech.*
 
-```
-ros2_ws_2/
-  src/
-    my_robot_driver/
-      my_robot_driver/
-        motor_manager.py
-        vendor/
-          scservo_sdk/
-            port_handler.py
-            sms_sts.py
-            scscl.py
-            packet_handler.py
-            protocol_packet_handler.py
-            scservo_def.py
-            __init__.py
-        __init__.py
-      setup.py
-      package.xml
-```
+- [ ] **Création du Package ROS 2**
+    - 1[ ] Créer le package `my_robot_driver`.
+    - 2[ ] Développer le **Publisher Node** (Lecture position moteurs -> `/joint_states`).
+    - 3[ ] Développer le **Subscriber Node** (Ordre `/joint_commands` -> Moteurs).
+    - 4[ ] Créer un fichier de config `motors.yaml` (Offsets, Limites, IDs).
+- [ ] **Calibration & Sécurité**
+    - [ ] Implémenter les limites angulaires (Min/Max) pour protéger le matériel.
+    - [ ] Créer une procédure de calibration des offsets (Zeroing).
 
-- **`motor_manager.py`** — Node ROS2 :
-  - ouvre le port série
-  - active le torque
-  - lit les positions
-  - publie `JointState`
-  - convertit ticks ↔ radians
-  - supporte `SMS_STS` et `SMS_STS_1M`
+## 🎮 Phase 3 : Téléopération Maître-Esclave
+*Objectif : Contrôler le robot en temps réel avec un bras jumeau.*
 
-- **`vendor/scservo_sdk/`**  
-  SDK Feetech **copié localement** (MIT), aucun pip externe.
+- [ ] **Logique de Contrôle**
+    - [ ] Implémenter le mode "Torque Off" pour le bras maître.
+    - [ ] Créer un noeud de mapping (Maître -> Esclave) avec inversion des axes si nécessaire.
+- [ ] **Sécurité**
+    - [ ] Ajouter un "Watchdog" : Si le PC plante, le robot s'arrête en 0.5s.
 
----
+## 🌍 Phase 4 : Connectivité & Vision (Le Niveau Pro)
+*Objectif : Pilotage à distance (Internet) et perception.*
 
-# 🎯 Objectifs du projet
+- [ ] **Réseau Robotique**
+    - [ ] Installer **Husarnet** (ou Tailscale) sur le PC Windows et le Raspberry Pi.
+- [ ] **Interface Opérateur**
+    - [ ] Installer `ros-foxglove-bridge` sur le Pi.
+    - [ ] Configurer un Dashboard Foxglove sur Windows (Vidéo + Sliders Moteurs).
 
-- Workspace ROS2 propre et autonome  
-- Driver Feetech simple et 100% local  
-- Lecture de positions et publication ROS2  
-- Contrôle par `JointState` (optionnel)  
-- Base parfaite pour un futur robot perso  
+## 🧠 Phase 5 : Intégration IA (LeRobot)
+*Objectif : Le robot exécute des tâches apprises.*
 
----
-
-# 🛠️ Installation
-
-### 1) Cloner le workspace
-
-```bash
-git clone git@github.com:<TON_USER>/ros2_ws_2.git
-cd ros2_ws_2
-```
-
-### 2) (Optionnel) Environnement virtuel
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 3) Build ROS2
-
-```bash
-colcon build
-source install/setup.bash
-```
-
----
-
-# 🎮 Utilisation du driver
-
-### Lancer le node
-
-```bash
-ros2 run my_robot_driver motor_manager
-```
-
-### Lire les positions des moteurs
-
-```bash
-ros2 topic echo /motors/joint_states
-```
-
-Exemple :
-
-```
-name: ['m1', 'm2']
-position: [0.12, 1.57]
-```
-
----
-
-# 🔌 Configuration
-
-Modifiable dans `motor_manager.py` :
-
-```python
-self.port_name = '/dev/ttyACM0'
-self.baud = 1_000_000
-self.ids = [1, 2]
-```
-
----
-
-# 📡 Topics ROS2
-
-### Publie :
-
-| Topic | Type | Description |
-|-------|------|-------------|
-| `/motors/joint_states` | `sensor_msgs/JointState` | Position des moteurs en radians |
-
-### Souscrit (optionnel) :
-
-| Topic | Type | Description |
-|-------|------|-------------|
-| `/motors/goal_positions` | `sensor_msgs/JointState` | Commande de position |
-
----
-
-# 🔧 Dépendances Python internes
-
-Gérées via `setup.py` :
-
-```
-pyserial>=3.5
-```
-
----
-
-# 🧪 Test matériel rapide
-
-```bash
-python3 - <<'PY'
-from my_robot_driver.vendor.scservo_sdk.port_handler import PortHandler
-from my_robot_driver.vendor.scservo_sdk.sms_sts import SMS_STS
-
-PORT = "/dev/ttyACM0"
-ID = 1
-
-p = PortHandler(PORT)
-p.openPort()
-p.setBaudRate(1_000_000)
-
-servo = SMS_STS(p)
-pos = servo.ReadPos(ID)
-
-print("Position servo ID 1 :", pos)
-p.closePort()
-PY
-```
-
----
-
-# 🛂 Permissions Linux
-
-```bash
-sudo usermod -a -G dialout $USER
-```
-
-Puis **déconnexion / reconnexion**.
-
----
-
-# 🗂️ Structure interne du package
-
-```
-my_robot_driver/
-  motor_manager.py
-  vendor/
-    scservo_sdk/
-  __init__.py
-setup.py
-package.xml
-```
-
----
-
-# 📝 Licence
-
-- Le SDK Feetech (scservo_sdk) → **MIT**
-- Le code du projet → **MIT** (modifiable selon ton besoin)
-
----
-
-# 🚀 Roadmap
-
-- [ ] launch file ROS2  
-- [ ] config YAML des moteurs  
-- [ ] support vitesse / couple  
-- [ ] diagnostics ROS2  
-- [ ] CI GitHub Actions (build & test)  
-- [ ] URDF + rviz  
-
----
-
-# 🤝 Auteur
-
-**Marc-André Bouchard**  
-Projet personnel — Feetech x ROS2  
-Intégrateur de systèmes et passionné de robotique
+- [ ] **Collecte de Données**
+    - [ ] Enregistrer des datasets (Images + Positions moteurs) via `rosbag`.
+- [ ] **Inférence**
+    - [ ] Wrapper le modèle LeRobot dans un noeud ROS 2.
+    - [ ] Créer une machine à état : "Mode Manuel" vs "Mode IA".
