@@ -15,8 +15,9 @@ Ce document détaille les étapes de transformation du kit SO-AMR100 en platefor
     - 3[ ] Développer le **Subscriber Node** (Ordre `/joint_commands` -> Moteurs).
     - 4[ ] Créer un fichier de config `motors.yaml` (Offsets, Limites, IDs).
 - [ ] **Calibration & Sécurité**
-    - [ ] Implémenter les limites angulaires (Min/Max) pour protéger le matériel.
-    - [ ] Créer une procédure de calibration des offsets (Zeroing).
+    - [ ] Implémenter les limites angulaires (Min/Max) dans le code du driver.
+    - [ ] Créer un **service ROS 2** pour la calibration des offsets (Zeroing).
+    - [ ] Développer un **script client** qui appelle ce service pour lancer la calibration.
 
 ## 🎮 Phase 3 : Téléopération Maître-Esclave
 *Objectif : Contrôler le robot en temps réel avec un bras jumeau.*
@@ -44,3 +45,14 @@ Ce document détaille les étapes de transformation du kit SO-AMR100 en platefor
 - [ ] **Inférence**
     - [ ] Wrapper le modèle LeRobot dans un noeud ROS 2.
     - [ ] Créer une machine à état : "Mode Manuel" vs "Mode IA".
+
+## 🧠 Phase 6 : Autonomie (Navigation & Perception)
+*Objectif : Permettre au robot de naviguer de manière autonome vers un point GPS.*
+
+- [ ] **Intégration des Capteurs**
+    - [ ] Créer un nœud pour le GPS/IMU.
+    - [ ] Configurer le nœud de la caméra.
+- [ ] **Localisation & Navigation**
+    - [ ] Configurer le package `robot_localization` pour la fusion de capteurs.
+    - [ ] Déployer et configurer la stack de navigation Nav2.
+    - [ ] Adapter le `motor_manager` pour qu'il accepte les commandes `/cmd_vel`.
